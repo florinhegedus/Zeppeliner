@@ -14,7 +14,7 @@ pygame.display.set_caption("Zeppeliner")
 text_color = (0, 0, 0)
 bg_color = (255, 255, 255)
 font1 = pygame.font.SysFont(None, 30)
-font2 = pygame.font.SysFont("Courier", 18)
+font2 = pygame.font.SysFont("Courier", 15)
 
 path = '/home/florin/Music/'
 songs = [f for f in listdir(path) if isfile(join(path, f))]
@@ -38,8 +38,13 @@ def display_time(time):
 	else:
 		text = str(minutes) + ':' + str(seconds)
 	timer = font2.render(text, True, text_color)
-	timer_rect = timer.get_rect(center=(dis_width/2, dis_height/2 + 30))
+	timer_rect = timer.get_rect(center=(630, dis_height/2 + 150))
 	dis.blit(timer, timer_rect)
+
+def display_progress_bar(time, length):
+	progress = time/length
+	pygame.draw.rect(dis, (0,250,154), pygame.Rect(200, dis_height/2+147, 400, 8))
+	pygame.draw.rect(dis, text_color, pygame.Rect(200, dis_height/2+147, 400*progress, 8))
 
 def play():
 	play = True
@@ -73,7 +78,8 @@ def play():
 			if time >= length:
 				play_song = False
 				os.system('pkill mpg123')
-		display_time(time)		
+		display_time(time)	
+		display_progress_bar(time, length)	
 		pygame.display.update()
 
 play()
