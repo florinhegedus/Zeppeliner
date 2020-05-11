@@ -3,6 +3,7 @@ import os
 import pygame
 from os import listdir
 from os.path import isfile, join
+from mutagen.mp3 import MP3
 
 pygame.init()
 dis_width=800
@@ -12,15 +13,33 @@ pygame.display.update()
 pygame.display.set_caption("Zeppeliner")
 text_color = (0, 0, 0)
 bg_color = (255, 255, 255)
+font1 = pygame.font.SysFont(None, 30)
+font2 = pygame.font.SysFont("Courier", 18)
 
 path = '/home/florin/Music/'
 songs = [f for f in listdir(path) if isfile(join(path, f))]
 
-def display_song(msg, color):
-	font = pygame.font.SysFont(None, 25)
-	mesg = font.render(msg, True, color)
+def song_length(path, song):
+	audio = MP3(path + song)
+	audio_info = audio.info
+	length = int(audio_info.length)
+	return length
+
+def display_song(msg):
+	mesg = font1.render(msg, True, text_color)
 	mesg_rect = mesg.get_rect(center=(dis_width/2, dis_height/2))
 	dis.blit(mesg, mesg_rect)
+
+def display_time(time):
+	seconds = int(time%60)
+	minutes = int(time/60)
+	if seconds < 10:
+		text = str(minutes) + ':0' + str(seconds)
+	else:
+		text = str(minutes) + ':' + str(seconds)
+	timer = font2.render(text, True, text_color)
+	timer_rect = timer.get_rect(center=(dis_width/2, dis_height/2 + 30))
+	dis.blit(timer, timer_rect)
 
 def play():
 	play = True
@@ -40,12 +59,21 @@ def play():
 					os.system('pkill mpg123')
 		if not play_song:
 			song = random.choice(songs)
-			song_path = path + "'" + song + "'"
-			os.system('mpg123 ' + song_path + '&')
+			length = song_length(path, song)
+			os.system("mpg123 " + path + "'" + song + "'"+ "&")
 			song = song[:-4]
 			play_song = True
+			start_time = pygame.time.get_ticks()
+			last_time = -1
 		if play_song:
-			display_song(song, text_color)
+			display_song(song)
+			time = int((pygame.time.get_ticks() - start_time)/1000)
+			if time != last_time:
+				last_time = time
+			if time >= length:
+				play_song = False
+				os.system('pkill mpg123')
+		display_time(time)		
 		pygame.display.update()
 
 play()
