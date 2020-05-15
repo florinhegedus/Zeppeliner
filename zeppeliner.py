@@ -14,7 +14,8 @@ pygame.display.set_caption("Zeppeliner")
 text_color = (0, 0, 0)
 bg_color = (255, 255, 255)
 font1 = pygame.font.SysFont(None, 30)
-font2 = pygame.font.SysFont("Courier", 15)
+font2 = pygame.font.SysFont("Courier", 13)
+font3 = pygame.font.SysFont(None, 17)
 
 path = '/home/florin/Music/'
 songs = [f for f in listdir(path) if isfile(join(path, f))]
@@ -33,18 +34,45 @@ def display_song(msg):
 def display_time(time):
 	seconds = int(time%60)
 	minutes = int(time/60)
+	posX = 630
+	posY = 372
 	if seconds < 10:
 		text = str(minutes) + ':0' + str(seconds)
 	else:
 		text = str(minutes) + ':' + str(seconds)
 	timer = font2.render(text, True, text_color)
-	timer_rect = timer.get_rect(center=(630, dis_height/2 + 150))
+	timer_rect = timer.get_rect(center=(posX, posY))
 	dis.blit(timer, timer_rect)
 
 def display_progress_bar(time, length):
 	progress = time/length
-	pygame.draw.rect(dis, (0,250,154), pygame.Rect(200, dis_height/2+147, 400, 8))
-	pygame.draw.rect(dis, text_color, pygame.Rect(200, dis_height/2+147, 400*progress, 8))
+	posY = 370
+	pygame.draw.rect(dis, (200,200,200), pygame.Rect(dis_width/2-200, posY, 400, 8))
+	pygame.draw.rect(dis, text_color, pygame.Rect(dis_width/2-200, posY, 400*progress, 8))
+
+def display_next_button(play_song):
+	posX = 720
+	posY = 362
+	button_width = 80
+	button_height = 22
+	color1 = (100, 100, 100)
+	color2 = (200, 200, 200)
+
+	mouse = pygame.mouse.get_pos()
+	click = pygame.mouse.get_pressed()
+
+	if posX+button_width/2>mouse[0]>posX-button_width/2 and posY+button_height>mouse[1]>posY:
+		pygame.draw.rect(dis, color1, pygame.Rect(posX - button_width/2, posY, button_width, button_height))
+		if click[0] == 1:
+			play_song = False
+			os.system('pkill mpg123')
+	else:
+		pygame.draw.rect(dis, color2, pygame.Rect(posX - button_width/2, posY, button_width, button_height))
+
+	next = font3.render("Next",True, text_color)
+	next_rect = next.get_rect(center=(posX, posY + button_height/2))
+	dis.blit(next, next_rect)
+	return play_song
 
 def play():
 	play = True
@@ -65,7 +93,7 @@ def play():
 		if not play_song:
 			song = random.choice(songs)
 			length = song_length(path, song)
-			os.system("mpg123 " + path + "'" + song + "'"+ "&")
+			os.system("mpg123 -q " + path + "'" + song + "'"+ "&")
 			song = song[:-4]
 			play_song = True
 			start_time = pygame.time.get_ticks()
@@ -80,6 +108,7 @@ def play():
 				os.system('pkill mpg123')
 		display_time(time)	
 		display_progress_bar(time, length)	
+		play_song = display_next_button(play_song)
 		pygame.display.update()
 
 play()
