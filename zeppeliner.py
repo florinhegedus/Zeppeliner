@@ -17,8 +17,51 @@ font1 = pygame.font.SysFont(None, 30)
 font2 = pygame.font.SysFont("Courier", 13)
 font3 = pygame.font.SysFont(None, 17)
 
+COLOR_INACTIVE = pygame.Color('black')
+COLOR_ACTIVE = (50, 50, 50)
+FONT = pygame.font.Font(None, 17)
+
 path = '/home/florin/Music/'
 songs = [f for f in listdir(path) if isfile(join(path, f))]
+
+class InputBox:
+
+	def __init__(self, x, y, w, h, text=''):
+		self.rect = pygame.Rect(x, y, w, h)
+		self.color = COLOR_INACTIVE
+		self.text = text
+		self.txt_surface = FONT.render(text, True, self.color)
+		self.active = False
+
+	def handle_event(self, event):
+		if event.type == pygame.MOUSEBUTTONDOWN:
+			#If the user clicked on the input_box rect
+			if self.rect.collidepoint(event.pos):
+				self.active = not self.active
+			else:
+				self.active = False
+			self.color = COLOR_ACTIVE if self.active else COLOR_INACTIVE
+		if event.type == pygame.KEYDOWN:
+			if self.active:
+				if event.key == pygame.K_RETURN:
+					print (self.text)
+				elif event.key == pygame.K_BACKSPACE:
+					self.text = self.text[:-1]
+				else:
+					self.text += event.unicode
+				self.txt_surface = FONT.render(self.text, True, self.color)
+
+	def update(self):
+		width = max(200, self.txt_surface.get_width() + 10)
+		self.rect.w = width
+
+	def draw(self, screen):
+		screen.blit(self.txt_surface, (self.rect.x + 5, self.rect.y + 5))
+		pygame.draw.rect(screen, self.color, self.rect, 2)
+
+	def clear(self):
+		self.text = ''
+		self.txt_surface = FONT.render(self.text, True, self.color)
 
 def song_length(path, song):
 	audio = MP3(path + song)
@@ -77,19 +120,42 @@ def display_next_button(play_song):
 def play():
 	play = True
 	play_song = False
+	input_box1 = InputBox(580, 15, 60, 22)
 	while play:
 		dis.fill(bg_color)
 		for event in pygame.event.get():
+			input_box1.handle_event(event)
 			if event.type==pygame.QUIT:
-				play = False
-				os.system('pkill mpg123')
-			if event.type==pygame.KEYDOWN:
-				if event.key==pygame.K_q:
 					play = False
 					os.system('pkill mpg123')
-				if event.key==pygame.K_n:
-					play_song = False
-					os.system('pkill mpg123')
+			if input_box1.active == True:
+				if event.type==pygame.KEYDOWN:
+					if event.key == pygame.K_RETURN:
+						#change the song to the user input
+						found = False
+						for sng in songs:
+							if input_box1.text.lower() in sng.lower():
+								song = sng
+								found = True
+								break
+						if found:
+							os.system('pkill mpg123')
+							input_box1.clear()
+							length = song_length(path, song)
+							os.system("mpg123 -q " + path + "'" + song + "'"+ "&")
+							play_song = True
+							song = song[:-4]
+							start_time = pygame.time.get_ticks()
+							last_time = -1
+			if input_box1.active == False:
+				if event.type==pygame.KEYDOWN:
+					if event.key==pygame.K_q:
+						play = False
+						os.system('pkill mpg123')
+					if event.key==pygame.K_n:
+						play_song = False
+						os.system('pkill mpg123')
+	
 		if not play_song:
 			song = random.choice(songs)
 			length = song_length(path, song)
@@ -106,6 +172,9 @@ def play():
 			if time >= length:
 				play_song = False
 				os.system('pkill mpg123')
+
+		input_box1.update()
+		input_box1.draw(dis)
 		display_time(time)	
 		display_progress_bar(time, length)	
 		play_song = display_next_button(play_song)
